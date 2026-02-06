@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model APIEndpoint {
+  id              String   @id @default(cuid())
+  name            String
+  url             String
+  method          String   @default("GET")
+  headers         String   @default("{}")
+  body            String?
+  pollingInterval Int      @default(900)
+  isEnabled       Boolean  @default(true)
+  lastCheckedAt   DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  healthCheckResults HealthCheckResult[]
+
+  @@map("api_endpoints")
+}
+
+model HealthCheckResult {
+  id           String   @id @default(cuid())
+  endpointId   String
+  timestamp    DateTime @default(now())
+  isSuccess    Boolean
+  statusCode   Int?
+  responseTime Float
+  errorMessage String?
+
+  endpoint APIEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([endpointId, timestamp])
+  @@map("health_check_results")
+}
