@@ -42,6 +42,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       status,
       lastResponseTime: lastResult?.responseTime ?? null,
       lastStatusCode: lastResult?.statusCode ?? null,
+      lastResponseBody: lastResult?.responseBody ?? null,
     });
   } catch (error) {
     console.error("GET /api/endpoints/[id] error:", error);

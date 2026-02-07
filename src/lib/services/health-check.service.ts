@@ -7,6 +7,7 @@ export interface HealthCheckOutcome {
   statusCode: number | null;
   responseTime: number;
   errorMessage: string | null;
+  responseBody: string | null;
 }
 
 export async function performHealthCheck(endpoint: {
@@ -38,11 +39,20 @@ export async function performHealthCheck(endpoint: {
     const responseTime = performance.now() - start;
     const isSuccess = response.status >= 200 && response.status < 400;
 
+    let responseBody: string | null = null;
+    try {
+      const text = await response.text();
+      responseBody = text.slice(0, 50000);
+    } catch {
+      // ignore body read errors
+    }
+
     return {
       isSuccess,
       statusCode: response.status,
       responseTime,
       errorMessage: isSuccess ? null : `HTTP ${response.status} ${response.statusText}`,
+      responseBody,
     };
   } catch (error) {
     const responseTime = performance.now() - start;
@@ -52,6 +62,7 @@ export async function performHealthCheck(endpoint: {
       statusCode: null,
       responseTime,
       errorMessage: message.includes("abort") ? "Request timed out" : message,
+      responseBody: null,
     };
   }
 }
@@ -69,6 +80,7 @@ export async function executeHealthCheck(endpointId: string): Promise<HealthChec
       statusCode: outcome.statusCode,
       responseTime: outcome.responseTime,
       errorMessage: outcome.errorMessage,
+      responseBody: outcome.responseBody,
     },
   });
 

@@ -33,6 +33,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         statusCode: r.statusCode,
         responseTime: r.responseTime,
         errorMessage: r.errorMessage,
+        responseBody: r.responseBody,
       })),
       total,
       limit,

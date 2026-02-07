@@ -26,6 +26,7 @@ export interface EndpointWithStatus {
   status: EndpointStatus;
   lastResponseTime: number | null;
   lastStatusCode: number | null;
+  lastResponseBody: string | null;
 }
 
 export interface HealthCheckResultData {
@@ -36,6 +37,7 @@ export interface HealthCheckResultData {
   statusCode: number | null;
   responseTime: number;
   errorMessage: string | null;
+  responseBody: string | null;
 }
 
 export interface ParsedCurlCommand {

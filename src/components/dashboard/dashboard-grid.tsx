@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { StatusCard } from "./status-card";
-import { StatusSummary } from "./status-summary";
+import { StatusSummary, type StatusFilter } from "./status-summary";
 import { Radio } from "lucide-react";
 import type { EndpointWithStatus } from "@/lib/types";
 
@@ -10,7 +11,13 @@ interface DashboardGridProps {
 }
 
 export function DashboardGrid({ endpoints }: DashboardGridProps) {
-  const allIds = endpoints.map((e) => e.id);
+  const [filter, setFilter] = useState<StatusFilter>("all");
+
+  const filtered = filter === "all"
+    ? endpoints
+    : endpoints.filter((e) => e.status === filter);
+
+  const allIds = filtered.map((e) => e.id);
 
   if (endpoints.length === 0) {
     return (
@@ -27,9 +34,9 @@ export function DashboardGrid({ endpoints }: DashboardGridProps) {
 
   return (
     <div>
-      <StatusSummary endpoints={endpoints} />
+      <StatusSummary endpoints={endpoints} activeFilter={filter} onFilterChange={setFilter} />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {endpoints.map((ep) => (
+        {filtered.map((ep) => (
           <StatusCard key={ep.id} endpoint={ep} allIds={allIds} />
         ))}
       </div>

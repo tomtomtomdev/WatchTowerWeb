@@ -32,7 +32,8 @@ model HealthCheckResult {
   isSuccess    Boolean
   statusCode   Int?
   responseTime Float
-  errorMessage String?
+  errorMessage  String?
+  responseBody  String?
 
   endpoint APIEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
 

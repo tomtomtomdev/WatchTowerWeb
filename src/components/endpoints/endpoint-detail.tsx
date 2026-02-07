@@ -98,6 +98,16 @@ export function EndpointDetail({ id }: EndpointDetailProps) {
           onPageChange={setPage}
         />
       </div>
+
+      {endpoint.lastResponseBody !== null && (
+        <>
+          <Separator />
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Response Content</h2>
+            <ResponseBodyViewer body={endpoint.lastResponseBody} />
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -107,6 +117,31 @@ function InfoCard({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg border p-3 bg-card">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="text-lg font-semibold mt-0.5">{value}</p>
+    </div>
+  );
+}
+
+function ResponseBodyViewer({ body }: { body: string }) {
+  let formatted = body;
+  let isJson = false;
+  try {
+    const parsed = JSON.parse(body);
+    formatted = JSON.stringify(parsed, null, 2);
+    isJson = true;
+  } catch {
+    // not JSON, show as-is
+  }
+
+  return (
+    <div className="rounded-lg border bg-muted/50 overflow-hidden">
+      {isJson && (
+        <div className="px-4 py-2 border-b bg-muted">
+          <span className="text-xs font-medium text-muted-foreground">JSON</span>
+        </div>
+      )}
+      <pre className="p-4 text-sm overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap break-all">
+        <code>{formatted}</code>
+      </pre>
     </div>
   );
 }
