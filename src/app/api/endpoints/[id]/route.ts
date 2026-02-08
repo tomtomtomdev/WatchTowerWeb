@@ -46,6 +46,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       loginEndpointId: endpoint.loginEndpointId,
       tokenJsonPath: endpoint.tokenJsonPath,
       cachedToken: endpoint.cachedToken,
+      cachedUserId: endpoint.cachedUserId,
       tokenRefreshedAt: endpoint.tokenRefreshedAt?.toISOString() || null,
       useApplyCodeLogin: endpoint.useApplyCodeLogin,
     });

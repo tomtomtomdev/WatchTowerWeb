@@ -75,6 +75,7 @@ async function performHealthCheckWithRefresh(endpoint: {
   loginEndpointId: string | null;
   tokenJsonPath: string | null;
   cachedToken: string | null;
+  cachedUserId: string | null;
   tokenRefreshedAt: Date | null;
   useApplyCodeLogin: boolean;
 }) {
@@ -83,7 +84,14 @@ async function performHealthCheckWithRefresh(endpoint: {
   if (endpoint.cachedToken && !headersObj["Authorization"]) {
     headersObj["Authorization"] = `Bearer ${endpoint.cachedToken}`;
   }
-  const endpointWithToken = { ...endpoint, headers: JSON.stringify(headersObj) };
+
+  // Substitute {{userId}} in body
+  let body = endpoint.body;
+  if (body && endpoint.cachedUserId) {
+    body = body.replace(/\{\{userId\}\}/g, endpoint.cachedUserId);
+  }
+
+  const endpointWithToken = { ...endpoint, headers: JSON.stringify(headersObj), body };
 
   const outcome = await performHealthCheck(endpointWithToken);
   const isTokenExpired = detectTokenExpiration(outcome.responseBody, outcome.statusCode);
@@ -107,9 +115,15 @@ async function performHealthCheckWithRefresh(endpoint: {
 
   let newToken: string | null = null;
 
+  let newUserId: string | null = null;
+
   if (endpoint.useApplyCodeLogin) {
     // Apply-code login flow
-    newToken = await performApplyCodeLogin();
+    const loginResult = await performApplyCodeLogin();
+    if (loginResult) {
+      newToken = loginResult.accessToken;
+      newUserId = loginResult.userId || null;
+    }
   } else {
     // Existing login endpoint flow
     const loginEndpoint = await prisma.aPIEndpoint.findUnique({
@@ -133,11 +147,16 @@ async function performHealthCheckWithRefresh(endpoint: {
 
   await prisma.aPIEndpoint.update({
     where: { id: endpoint.id },
-    data: { cachedToken: newToken, tokenRefreshedAt: new Date() },
+    data: { cachedToken: newToken, cachedUserId: newUserId, tokenRefreshedAt: new Date() },
   });
 
   headersObj["Authorization"] = `Bearer ${newToken}`;
-  const retryEndpoint = { ...endpoint, headers: JSON.stringify(headersObj) };
+  let retryBody = endpoint.body;
+  const resolvedUserId = newUserId || endpoint.cachedUserId;
+  if (retryBody && resolvedUserId) {
+    retryBody = retryBody.replace(/\{\{userId\}\}/g, resolvedUserId);
+  }
+  const retryEndpoint = { ...endpoint, headers: JSON.stringify(headersObj), body: retryBody };
   const retryOutcome = await performHealthCheck(retryEndpoint);
 
   return { ...retryOutcome, isTokenExpired: false, wasTokenRefreshed: true };

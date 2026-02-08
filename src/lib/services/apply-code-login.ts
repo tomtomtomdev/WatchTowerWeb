@@ -1,6 +1,6 @@
 import { encryptPassword } from "@/lib/utils/rsa-encrypt";
 
-export async function performApplyCodeLogin(): Promise<string | null> {
+export async function performApplyCodeLogin(): Promise<{ accessToken: string; userId: string } | null> {
   const baseUrl = process.env.LOGIN_BASE_URL;
   const email = process.env.LOGIN_EMAIL;
   const password = process.env.LOGIN_PASSWORD;
@@ -58,13 +58,14 @@ export async function performApplyCodeLogin(): Promise<string | null> {
 
     const loginData = await loginRes.json();
     const accessToken = loginData?.data?.accessToken;
+    const userId = loginData?.data?.userId;
     if (!accessToken) {
       console.log("[apply-code-login] No accessToken in login response:", JSON.stringify(loginData));
       return null;
     }
 
-    console.log("[apply-code-login] Step 3 complete, got accessToken");
-    return accessToken;
+    console.log("[apply-code-login] Step 3 complete, got accessToken" + (userId ? " and userId" : ""));
+    return { accessToken, userId: userId ?? "" };
   } catch (error) {
     console.error("[apply-code-login] Error:", error);
     return null;

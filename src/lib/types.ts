@@ -30,6 +30,7 @@ export interface EndpointWithStatus {
   loginEndpointId: string | null;
   tokenJsonPath: string | null;
   cachedToken: string | null;
+  cachedUserId: string | null;
   tokenRefreshedAt: string | null;
   useApplyCodeLogin: boolean;
 }

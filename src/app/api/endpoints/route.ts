@@ -40,6 +40,7 @@ export async function GET() {
         loginEndpointId: ep.loginEndpointId,
         tokenJsonPath: ep.tokenJsonPath,
         cachedToken: ep.cachedToken,
+        cachedUserId: ep.cachedUserId,
         tokenRefreshedAt: ep.tokenRefreshedAt?.toISOString() || null,
         useApplyCodeLogin: ep.useApplyCodeLogin,
       };

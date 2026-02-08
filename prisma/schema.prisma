@@ -23,6 +23,7 @@ model APIEndpoint {
   loginEndpointId  String?
   tokenJsonPath    String?
   cachedToken      String?
+  cachedUserId     String?
   tokenRefreshedAt    DateTime?
   useApplyCodeLogin   Boolean  @default(false)
 
