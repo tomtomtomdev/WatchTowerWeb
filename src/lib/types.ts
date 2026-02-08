@@ -27,6 +27,10 @@ export interface EndpointWithStatus {
   lastResponseTime: number | null;
   lastStatusCode: number | null;
   lastResponseBody: string | null;
+  loginEndpointId: string | null;
+  tokenJsonPath: string | null;
+  cachedToken: string | null;
+  tokenRefreshedAt: string | null;
 }
 
 export interface HealthCheckResultData {
@@ -38,6 +42,7 @@ export interface HealthCheckResultData {
   responseTime: number;
   errorMessage: string | null;
   responseBody: string | null;
+  isTokenExpired: boolean;
 }
 
 export interface ParsedCurlCommand {

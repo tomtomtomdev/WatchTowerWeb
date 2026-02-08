@@ -99,15 +99,18 @@ export function EndpointDetail({ id }: EndpointDetailProps) {
         />
       </div>
 
-      {endpoint.lastResponseBody !== null && (
-        <>
-          <Separator />
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Response Content</h2>
-            <ResponseBodyViewer body={endpoint.lastResponseBody} />
+      <Separator />
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Latest Response</h2>
+        {endpoint.lastResponseBody !== null ? (
+          <ResponseBodyViewer body={endpoint.lastResponseBody} />
+        ) : (
+          <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+            <p>No response data yet.</p>
+            <p className="text-sm mt-1">Click &ldquo;Check Now&rdquo; above to run a health check.</p>
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }

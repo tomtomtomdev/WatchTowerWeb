@@ -1,8 +1,11 @@
 import { PrismaClient } from "@prisma/client";
+import { detectTokenExpiration } from "./src/lib/utils/token-detection";
+import { extractTokenFromResponse } from "./src/lib/utils/jsonpath";
 
 const prisma = new PrismaClient();
 const CHECK_INTERVAL = 60_000; // 60 seconds
 const TIMEOUT_MS = 30_000;
+const REFRESH_COOLDOWN_MS = 60_000;
 
 async function performHealthCheck(endpoint: {
   id: string;
@@ -61,6 +64,68 @@ async function performHealthCheck(endpoint: {
   }
 }
 
+async function performHealthCheckWithRefresh(endpoint: {
+  id: string;
+  url: string;
+  method: string;
+  headers: string;
+  body: string | null;
+  loginEndpointId: string | null;
+  tokenJsonPath: string | null;
+  cachedToken: string | null;
+  tokenRefreshedAt: Date | null;
+}) {
+  // Merge cached token into headers
+  const headersObj: Record<string, string> = JSON.parse(endpoint.headers || "{}");
+  if (endpoint.cachedToken && !headersObj["Authorization"]) {
+    headersObj["Authorization"] = `Bearer ${endpoint.cachedToken}`;
+  }
+  const endpointWithToken = { ...endpoint, headers: JSON.stringify(headersObj) };
+
+  const outcome = await performHealthCheck(endpointWithToken);
+  const isTokenExpired = detectTokenExpiration(outcome.responseBody, outcome.statusCode);
+
+  if (!isTokenExpired || !endpoint.loginEndpointId || !endpoint.tokenJsonPath) {
+    return { ...outcome, isTokenExpired, wasTokenRefreshed: false };
+  }
+
+  // Cooldown check
+  if (endpoint.tokenRefreshedAt) {
+    const elapsed = Date.now() - endpoint.tokenRefreshedAt.getTime();
+    if (elapsed < REFRESH_COOLDOWN_MS) {
+      return { ...outcome, isTokenExpired, wasTokenRefreshed: false };
+    }
+  }
+
+  const loginEndpoint = await prisma.aPIEndpoint.findUnique({
+    where: { id: endpoint.loginEndpointId },
+  });
+  if (!loginEndpoint) {
+    return { ...outcome, isTokenExpired, wasTokenRefreshed: false };
+  }
+
+  const loginOutcome = await performHealthCheck(loginEndpoint);
+  if (!loginOutcome.isSuccess || !loginOutcome.responseBody) {
+    return { ...outcome, isTokenExpired, wasTokenRefreshed: false };
+  }
+
+  const newToken = extractTokenFromResponse(loginOutcome.responseBody, endpoint.tokenJsonPath);
+  if (!newToken) {
+    return { ...outcome, isTokenExpired, wasTokenRefreshed: false };
+  }
+
+  await prisma.aPIEndpoint.update({
+    where: { id: endpoint.id },
+    data: { cachedToken: newToken, tokenRefreshedAt: new Date() },
+  });
+
+  headersObj["Authorization"] = `Bearer ${newToken}`;
+  const retryEndpoint = { ...endpoint, headers: JSON.stringify(headersObj) };
+  const retryOutcome = await performHealthCheck(retryEndpoint);
+
+  return { ...retryOutcome, isTokenExpired: false, wasTokenRefreshed: true };
+}
+
 async function runScheduledChecks() {
   const endpoints = await prisma.aPIEndpoint.findMany({
     where: { isEnabled: true },
@@ -79,12 +144,13 @@ async function runScheduledChecks() {
 
   for (const endpoint of due) {
     try {
-      const outcome = await performHealthCheck(endpoint);
+      const outcome = await performHealthCheckWithRefresh(endpoint);
 
       await prisma.healthCheckResult.create({
         data: {
           endpointId: endpoint.id,
           isSuccess: outcome.isSuccess,
+          isTokenExpired: outcome.isTokenExpired,
           statusCode: outcome.statusCode,
           responseTime: outcome.responseTime,
           errorMessage: outcome.errorMessage,
@@ -98,8 +164,9 @@ async function runScheduledChecks() {
       });
 
       const status = outcome.isSuccess ? "✓" : "✗";
+      const refreshFlag = outcome.wasTokenRefreshed ? " [token-refreshed]" : "";
       console.log(
-        `[worker] ${status} ${endpoint.name} - ${outcome.statusCode ?? "ERR"} (${Math.round(outcome.responseTime)}ms)`
+        `[worker] ${status} ${endpoint.name} - ${outcome.statusCode ?? "ERR"} (${Math.round(outcome.responseTime)}ms)${refreshFlag}`
       );
     } catch (error) {
       console.error(`[worker] Error checking ${endpoint.name}:`, error);

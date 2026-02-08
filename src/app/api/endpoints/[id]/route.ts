@@ -43,6 +43,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       lastResponseTime: lastResult?.responseTime ?? null,
       lastStatusCode: lastResult?.statusCode ?? null,
       lastResponseBody: lastResult?.responseBody ?? null,
+      loginEndpointId: endpoint.loginEndpointId,
+      tokenJsonPath: endpoint.tokenJsonPath,
+      cachedToken: endpoint.cachedToken,
+      tokenRefreshedAt: endpoint.tokenRefreshedAt?.toISOString() || null,
     });
   } catch (error) {
     console.error("GET /api/endpoints/[id] error:", error);
@@ -79,6 +83,18 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (body.body !== undefined) updates.body = body.body;
     if (body.pollingInterval !== undefined) updates.pollingInterval = body.pollingInterval;
     if (body.isEnabled !== undefined) updates.isEnabled = body.isEnabled;
+    if (body.loginEndpointId !== undefined) {
+      if (body.loginEndpointId === id) {
+        return NextResponse.json({ error: "Endpoint cannot reference itself as login endpoint" }, { status: 400 });
+      }
+      updates.loginEndpointId = body.loginEndpointId || null;
+    }
+    if (body.tokenJsonPath !== undefined) {
+      if (body.tokenJsonPath && !body.tokenJsonPath.startsWith("$.")) {
+        return NextResponse.json({ error: "tokenJsonPath must start with '$.' " }, { status: 400 });
+      }
+      updates.tokenJsonPath = body.tokenJsonPath || null;
+    }
 
     const endpoint = await prisma.aPIEndpoint.update({
       where: { id },

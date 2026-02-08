@@ -37,6 +37,10 @@ export async function GET() {
         status,
         lastResponseTime: lastResult?.responseTime ?? null,
         lastStatusCode: lastResult?.statusCode ?? null,
+        loginEndpointId: ep.loginEndpointId,
+        tokenJsonPath: ep.tokenJsonPath,
+        cachedToken: ep.cachedToken,
+        tokenRefreshedAt: ep.tokenRefreshedAt?.toISOString() || null,
       };
     });
 
@@ -51,7 +55,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, url, method, headers, body: reqBody, pollingInterval } = body;
+    const { name, url, method, headers, body: reqBody, pollingInterval, loginEndpointId, tokenJsonPath } = body;
 
     if (!name || typeof name !== "string") {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -62,6 +66,9 @@ export async function POST(request: Request) {
     if (method && !HTTP_METHODS.includes(method)) {
       return NextResponse.json({ error: "Invalid HTTP method" }, { status: 400 });
     }
+    if (loginEndpointId && (!tokenJsonPath || !tokenJsonPath.startsWith("$."))) {
+      return NextResponse.json({ error: "tokenJsonPath starting with '$.' is required when loginEndpointId is set" }, { status: 400 });
+    }
 
     const endpoint = await prisma.aPIEndpoint.create({
       data: {
@@ -71,6 +78,8 @@ export async function POST(request: Request) {
         headers: headers ? JSON.stringify(headers) : "{}",
         body: reqBody || null,
         pollingInterval: pollingInterval || 900,
+        loginEndpointId: loginEndpointId || null,
+        tokenJsonPath: tokenJsonPath || null,
       },
     });
 

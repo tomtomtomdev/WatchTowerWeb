@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { performHealthCheckWithRefresh, TokenRefreshOutcome } from "./token-refresh.service";
 
 const TIMEOUT_MS = 30000;
 
@@ -67,16 +68,17 @@ export async function performHealthCheck(endpoint: {
   }
 }
 
-export async function executeHealthCheck(endpointId: string): Promise<HealthCheckOutcome> {
+export async function executeHealthCheck(endpointId: string): Promise<TokenRefreshOutcome> {
   const endpoint = await prisma.aPIEndpoint.findUnique({ where: { id: endpointId } });
   if (!endpoint) throw new Error("Endpoint not found");
 
-  const outcome = await performHealthCheck(endpoint);
+  const outcome = await performHealthCheckWithRefresh(endpoint);
 
   await prisma.healthCheckResult.create({
     data: {
       endpointId: endpoint.id,
       isSuccess: outcome.isSuccess,
+      isTokenExpired: outcome.isTokenExpired,
       statusCode: outcome.statusCode,
       responseTime: outcome.responseTime,
       errorMessage: outcome.errorMessage,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +21,19 @@ export function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
   const [headers, setHeaders] = useState<Array<{ key: string; value: string }>>([]);
   const [body, setBody] = useState("");
   const [pollingInterval, setPollingInterval] = useState("900");
+  const [loginEndpointId, setLoginEndpointId] = useState("");
+  const [tokenJsonPath, setTokenJsonPath] = useState("");
+  const [existingEndpoints, setExistingEndpoints] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/endpoints")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setExistingEndpoints(data.map((e: { id: string; name: string }) => ({ id: e.id, name: e.name })));
+      })
+      .catch(() => {});
+  }, []);
 
   const addHeader = () => setHeaders([...headers, { key: "", value: "" }]);
   const removeHeader = (index: number) => setHeaders(headers.filter((_, i) => i !== index));
@@ -53,6 +65,8 @@ export function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
           headers: headersObj,
           body: body.trim() || null,
           pollingInterval: parseInt(pollingInterval),
+          loginEndpointId: loginEndpointId || null,
+          tokenJsonPath: tokenJsonPath.trim() || null,
         }),
       });
 
@@ -131,6 +145,28 @@ export function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
           </SelectContent>
         </Select>
       </div>
+
+      {existingEndpoints.length > 0 && (
+        <div className="space-y-2">
+          <Label>Auto Token Refresh</Label>
+          <Select value={loginEndpointId} onValueChange={setLoginEndpointId}>
+            <SelectTrigger><SelectValue placeholder="Login endpoint (optional)" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">None</SelectItem>
+              {existingEndpoints.map((ep) => (
+                <SelectItem key={ep.id} value={ep.id}>{ep.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {loginEndpointId && (
+            <Input
+              placeholder="$.data.access_token"
+              value={tokenJsonPath}
+              onChange={(e) => setTokenJsonPath(e.target.value)}
+            />
+          )}
+        </div>
+      )}
 
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? "Creating..." : "Create Endpoint"}

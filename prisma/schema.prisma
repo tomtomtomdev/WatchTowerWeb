@@ -20,7 +20,14 @@ model APIEndpoint {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  loginEndpointId  String?
+  tokenJsonPath    String?
+  cachedToken      String?
+  tokenRefreshedAt DateTime?
+
   healthCheckResults HealthCheckResult[]
+  loginEndpoint      APIEndpoint?  @relation("LoginRef", fields: [loginEndpointId], references: [id], onDelete: SetNull)
+  dependentEndpoints APIEndpoint[] @relation("LoginRef")
 
   @@map("api_endpoints")
 }
@@ -29,8 +36,9 @@ model HealthCheckResult {
   id           String   @id @default(cuid())
   endpointId   String
   timestamp    DateTime @default(now())
-  isSuccess    Boolean
-  statusCode   Int?
+  isSuccess      Boolean
+  isTokenExpired Boolean  @default(false)
+  statusCode     Int?
   responseTime Float
   errorMessage  String?
   responseBody  String?
