@@ -52,7 +52,7 @@ export function StatusCard({ endpoint, allIds }: StatusCardProps) {
               className="shrink-0"
             />
             <div className="min-w-0">
-              <p className="font-medium text-sm truncate">{endpoint.name}</p>
+              <p className="font-medium text-sm truncate" dir="rtl" style={{ textAlign: "left" }}>{endpoint.name}</p>
               <p className="text-xs text-muted-foreground truncate">{endpoint.url}</p>
             </div>
           </div>
