@@ -147,7 +147,7 @@ async function performHealthCheckWithRefresh(endpoint: {
 
   await prisma.aPIEndpoint.update({
     where: { id: endpoint.id },
-    data: { cachedToken: newToken, cachedUserId: newUserId, tokenRefreshedAt: new Date() },
+    data: { cachedToken: newToken, ...(newUserId ? { cachedUserId: newUserId } : {}), tokenRefreshedAt: new Date() },
   });
 
   headersObj["Authorization"] = `Bearer ${newToken}`;
