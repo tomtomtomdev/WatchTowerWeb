@@ -100,6 +100,12 @@ export function EndpointDetail({ id }: EndpointDetailProps) {
       </div>
 
       <Separator />
+      {endpoint.body && (
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Request Body</h2>
+          <ResponseBodyViewer body={endpoint.body} />
+        </div>
+      )}
       <div>
         <h2 className="text-lg font-semibold mb-4">Latest Response</h2>
         {endpoint.lastResponseBody !== null ? (
