@@ -24,7 +24,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const lastResult = endpoint.healthCheckResults[0] || null;
     let status = "unknown";
     if (endpoint.isEnabled && lastResult) {
-      status = lastResult.isSuccess ? "healthy" : "failing";
+      if (lastResult.isTokenExpired) status = "expired";
+      else status = lastResult.isSuccess ? "healthy" : "failing";
     }
 
     return NextResponse.json({

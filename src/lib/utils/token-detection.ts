@@ -8,7 +8,6 @@ const TOKEN_EXPIRED_PATTERNS = [
 ];
 
 export function detectTokenExpiration(responseBody: string | null, statusCode: number | null): boolean {
-  if (statusCode !== 401 && statusCode !== 403) return false;
   if (!responseBody) return false;
 
   const bodyLower = responseBody.toLowerCase();

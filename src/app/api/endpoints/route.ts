@@ -20,7 +20,10 @@ export async function GET() {
       const lastResult = ep.healthCheckResults[0] || null;
       let status: string = "unknown";
       if (!ep.isEnabled) status = "unknown";
-      else if (lastResult) status = lastResult.isSuccess ? "healthy" : "failing";
+      else if (lastResult) {
+        if (lastResult.isTokenExpired) status = "expired";
+        else status = lastResult.isSuccess ? "healthy" : "failing";
+      }
 
       return {
         id: ep.id,

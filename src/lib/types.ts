@@ -9,7 +9,7 @@ export const POLLING_INTERVALS = [
   { label: "24 hours", value: 86400 },
 ] as const;
 
-export type EndpointStatus = "healthy" | "failing" | "unknown" | "checking";
+export type EndpointStatus = "healthy" | "failing" | "expired" | "unknown" | "checking";
 
 export interface EndpointWithStatus {
   id: string;

@@ -21,6 +21,8 @@ export function statusColor(status: EndpointStatus): string {
       return "text-green-500";
     case "failing":
       return "text-red-500";
+    case "expired":
+      return "text-amber-500";
     case "checking":
       return "text-orange-500";
     case "unknown":
@@ -35,6 +37,8 @@ export function statusBgColor(status: EndpointStatus): string {
       return "bg-green-500";
     case "failing":
       return "bg-red-500";
+    case "expired":
+      return "bg-amber-500";
     case "checking":
       return "bg-orange-500";
     case "unknown":
@@ -49,6 +53,8 @@ export function statusBorderColor(status: EndpointStatus): string {
       return "border-green-500";
     case "failing":
       return "border-red-500";
+    case "expired":
+      return "border-amber-500";
     case "checking":
       return "border-orange-500";
     case "unknown":
@@ -63,6 +69,8 @@ export function statusLabel(status: EndpointStatus): string {
       return "Healthy";
     case "failing":
       return "Failing";
+    case "expired":
+      return "Expired";
     case "checking":
       return "Checking";
     case "unknown":
