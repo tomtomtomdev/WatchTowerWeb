@@ -23,7 +23,8 @@ model APIEndpoint {
   loginEndpointId  String?
   tokenJsonPath    String?
   cachedToken      String?
-  tokenRefreshedAt DateTime?
+  tokenRefreshedAt    DateTime?
+  useApplyCodeLogin   Boolean  @default(false)
 
   healthCheckResults HealthCheckResult[]
   loginEndpoint      APIEndpoint?  @relation("LoginRef", fields: [loginEndpointId], references: [id], onDelete: SetNull)

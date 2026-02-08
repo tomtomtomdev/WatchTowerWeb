@@ -41,6 +41,7 @@ export async function GET() {
         tokenJsonPath: ep.tokenJsonPath,
         cachedToken: ep.cachedToken,
         tokenRefreshedAt: ep.tokenRefreshedAt?.toISOString() || null,
+        useApplyCodeLogin: ep.useApplyCodeLogin,
       };
     });
 
@@ -55,7 +56,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, url, method, headers, body: reqBody, pollingInterval, loginEndpointId, tokenJsonPath } = body;
+    const { name, url, method, headers, body: reqBody, pollingInterval, loginEndpointId, tokenJsonPath, useApplyCodeLogin } = body;
 
     if (!name || typeof name !== "string") {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -80,6 +81,7 @@ export async function POST(request: Request) {
         pollingInterval: pollingInterval || 900,
         loginEndpointId: loginEndpointId || null,
         tokenJsonPath: tokenJsonPath || null,
+        useApplyCodeLogin: useApplyCodeLogin ?? false,
       },
     });
 

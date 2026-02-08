@@ -23,6 +23,7 @@ export function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
   const [pollingInterval, setPollingInterval] = useState("900");
   const [loginEndpointId, setLoginEndpointId] = useState("");
   const [tokenJsonPath, setTokenJsonPath] = useState("");
+  const [useApplyCodeLogin, setUseApplyCodeLogin] = useState(false);
   const [existingEndpoints, setExistingEndpoints] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(false);
 
@@ -65,8 +66,9 @@ export function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
           headers: headersObj,
           body: body.trim() || null,
           pollingInterval: parseInt(pollingInterval),
-          loginEndpointId: loginEndpointId || null,
-          tokenJsonPath: tokenJsonPath.trim() || null,
+          loginEndpointId: useApplyCodeLogin ? null : (loginEndpointId || null),
+          tokenJsonPath: useApplyCodeLogin ? null : (tokenJsonPath.trim() || null),
+          useApplyCodeLogin,
         }),
       });
 
@@ -146,27 +148,47 @@ export function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
         </Select>
       </div>
 
-      {existingEndpoints.length > 0 && (
-        <div className="space-y-2">
-          <Label>Auto Token Refresh</Label>
-          <Select value={loginEndpointId} onValueChange={setLoginEndpointId}>
-            <SelectTrigger><SelectValue placeholder="Login endpoint (optional)" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">None</SelectItem>
-              {existingEndpoints.map((ep) => (
-                <SelectItem key={ep.id} value={ep.id}>{ep.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {loginEndpointId && (
-            <Input
-              placeholder="$.data.access_token"
-              value={tokenJsonPath}
-              onChange={(e) => setTokenJsonPath(e.target.value)}
-            />
-          )}
-        </div>
-      )}
+      <div className="space-y-2">
+        <Label>Auto Token Refresh</Label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={useApplyCodeLogin}
+            onChange={(e) => {
+              setUseApplyCodeLogin(e.target.checked);
+              if (e.target.checked) {
+                setLoginEndpointId("");
+                setTokenJsonPath("");
+              }
+            }}
+            className="rounded border-gray-300"
+          />
+          Use Apply-Code Login
+        </label>
+        {useApplyCodeLogin && (
+          <p className="text-xs text-muted-foreground">Uses environment credentials for apply-code + login flow</p>
+        )}
+        {!useApplyCodeLogin && existingEndpoints.length > 0 && (
+          <>
+            <Select value={loginEndpointId} onValueChange={setLoginEndpointId}>
+              <SelectTrigger><SelectValue placeholder="Login endpoint (optional)" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">None</SelectItem>
+                {existingEndpoints.map((ep) => (
+                  <SelectItem key={ep.id} value={ep.id}>{ep.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {loginEndpointId && (
+              <Input
+                placeholder="$.data.access_token"
+                value={tokenJsonPath}
+                onChange={(e) => setTokenJsonPath(e.target.value)}
+              />
+            )}
+          </>
+        )}
+      </div>
 
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? "Creating..." : "Create Endpoint"}

@@ -47,6 +47,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       tokenJsonPath: endpoint.tokenJsonPath,
       cachedToken: endpoint.cachedToken,
       tokenRefreshedAt: endpoint.tokenRefreshedAt?.toISOString() || null,
+      useApplyCodeLogin: endpoint.useApplyCodeLogin,
     });
   } catch (error) {
     console.error("GET /api/endpoints/[id] error:", error);
@@ -95,6 +96,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       }
       updates.tokenJsonPath = body.tokenJsonPath || null;
     }
+    if (body.useApplyCodeLogin !== undefined) updates.useApplyCodeLogin = body.useApplyCodeLogin;
 
     const endpoint = await prisma.aPIEndpoint.update({
       where: { id },

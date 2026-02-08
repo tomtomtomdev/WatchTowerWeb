@@ -31,6 +31,7 @@ export interface EndpointWithStatus {
   tokenJsonPath: string | null;
   cachedToken: string | null;
   tokenRefreshedAt: string | null;
+  useApplyCodeLogin: boolean;
 }
 
 export interface HealthCheckResultData {

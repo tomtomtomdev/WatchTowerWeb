@@ -1,6 +1,8 @@
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { detectTokenExpiration } from "./src/lib/utils/token-detection";
 import { extractTokenFromResponse } from "./src/lib/utils/jsonpath";
+import { performApplyCodeLogin } from "./src/lib/services/apply-code-login";
 
 const prisma = new PrismaClient();
 const CHECK_INTERVAL = 60_000; // 60 seconds
@@ -74,6 +76,7 @@ async function performHealthCheckWithRefresh(endpoint: {
   tokenJsonPath: string | null;
   cachedToken: string | null;
   tokenRefreshedAt: Date | null;
+  useApplyCodeLogin: boolean;
 }) {
   // Merge cached token into headers
   const headersObj: Record<string, string> = JSON.parse(endpoint.headers || "{}");
@@ -85,7 +88,12 @@ async function performHealthCheckWithRefresh(endpoint: {
   const outcome = await performHealthCheck(endpointWithToken);
   const isTokenExpired = detectTokenExpiration(outcome.responseBody, outcome.statusCode);
 
-  if (!isTokenExpired || !endpoint.loginEndpointId || !endpoint.tokenJsonPath) {
+  if (!isTokenExpired) {
+    return { ...outcome, isTokenExpired, wasTokenRefreshed: false };
+  }
+
+  // Must have either loginEndpointId+tokenJsonPath or useApplyCodeLogin
+  if (!endpoint.useApplyCodeLogin && (!endpoint.loginEndpointId || !endpoint.tokenJsonPath)) {
     return { ...outcome, isTokenExpired, wasTokenRefreshed: false };
   }
 
@@ -97,19 +105,28 @@ async function performHealthCheckWithRefresh(endpoint: {
     }
   }
 
-  const loginEndpoint = await prisma.aPIEndpoint.findUnique({
-    where: { id: endpoint.loginEndpointId },
-  });
-  if (!loginEndpoint) {
-    return { ...outcome, isTokenExpired, wasTokenRefreshed: false };
+  let newToken: string | null = null;
+
+  if (endpoint.useApplyCodeLogin) {
+    // Apply-code login flow
+    newToken = await performApplyCodeLogin();
+  } else {
+    // Existing login endpoint flow
+    const loginEndpoint = await prisma.aPIEndpoint.findUnique({
+      where: { id: endpoint.loginEndpointId! },
+    });
+    if (!loginEndpoint) {
+      return { ...outcome, isTokenExpired, wasTokenRefreshed: false };
+    }
+
+    const loginOutcome = await performHealthCheck(loginEndpoint);
+    if (!loginOutcome.isSuccess || !loginOutcome.responseBody) {
+      return { ...outcome, isTokenExpired, wasTokenRefreshed: false };
+    }
+
+    newToken = extractTokenFromResponse(loginOutcome.responseBody, endpoint.tokenJsonPath!);
   }
 
-  const loginOutcome = await performHealthCheck(loginEndpoint);
-  if (!loginOutcome.isSuccess || !loginOutcome.responseBody) {
-    return { ...outcome, isTokenExpired, wasTokenRefreshed: false };
-  }
-
-  const newToken = extractTokenFromResponse(loginOutcome.responseBody, endpoint.tokenJsonPath);
   if (!newToken) {
     return { ...outcome, isTokenExpired, wasTokenRefreshed: false };
   }
