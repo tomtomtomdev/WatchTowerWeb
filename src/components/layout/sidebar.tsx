@@ -44,7 +44,7 @@ export function Sidebar({ endpoints, className }: SidebarProps) {
               )}
             >
               <span className={cn("h-2 w-2 rounded-full shrink-0", statusBgColor(ep.status))} />
-              <span className="truncate">{ep.name}</span>
+              <span className="truncate" dir="rtl" style={{ textAlign: "left" }}>{ep.name}</span>
             </button>
           );
         })}
