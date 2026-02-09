@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Radio, Bell, BellOff, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Radio, Bell, BellOff, Trash2, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNotifications } from "@/hooks/use-notifications";
@@ -23,6 +24,7 @@ interface HeaderProps {
 }
 
 export function Header({ endpoints, onAddEndpoint, onDeleteAll }: HeaderProps) {
+  const router = useRouter();
   const { permission, requestPermission } = useNotifications();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -101,6 +103,18 @@ export function Header({ endpoints, onAddEndpoint, onDeleteAll }: HeaderProps) {
               <TooltipContent>Delete all endpoints</TooltipContent>
             </Tooltip>
           )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.push("/settings")}
+              >
+                <Settings className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Settings</TooltipContent>
+          </Tooltip>
           <Button onClick={onAddEndpoint} size="sm">
             Add Endpoint
           </Button>
