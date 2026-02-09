@@ -50,3 +50,16 @@ model HealthCheckResult {
   @@index([endpointId, timestamp])
   @@map("health_check_results")
 }
+
+model Settings {
+  id              String   @id @default("singleton")
+  loginBaseUrl    String?
+  loginEmail      String?
+  loginPassword   String?
+  cachedAccessToken String?
+  cachedUserId      String?
+  tokenRefreshedAt  DateTime?
+  updatedAt       DateTime @updatedAt
+
+  @@map("settings")
+}

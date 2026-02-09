@@ -1,14 +1,68 @@
 import { encryptPassword } from "@/lib/utils/rsa-encrypt";
+import { prisma } from "@/lib/db";
 
-export async function performApplyCodeLogin(): Promise<{ accessToken: string; userId: string } | null> {
+const SETTINGS_ID = "singleton";
+
+async function getLoginCredentials(): Promise<{ baseUrl: string; email: string; password: string } | null> {
+  // Try to get credentials from database first
+  try {
+    const settings = await prisma.settings.findUnique({
+      where: { id: SETTINGS_ID },
+    });
+
+    if (settings?.loginBaseUrl && settings?.loginEmail && settings?.loginPassword) {
+      return {
+        baseUrl: settings.loginBaseUrl,
+        email: settings.loginEmail,
+        password: settings.loginPassword,
+      };
+    }
+  } catch (error) {
+    console.log("[apply-code-login] Could not read from database, falling back to env vars");
+  }
+
+  // Fall back to environment variables
   const baseUrl = process.env.LOGIN_BASE_URL;
   const email = process.env.LOGIN_EMAIL;
   const password = process.env.LOGIN_PASSWORD;
 
-  if (!baseUrl || !email || !password) {
-    console.log("[apply-code-login] Missing env vars (LOGIN_BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD)");
+  if (baseUrl && email && password) {
+    return { baseUrl, email, password };
+  }
+
+  return null;
+}
+
+async function saveTokenToSettings(accessToken: string, userId: string): Promise<void> {
+  try {
+    await prisma.settings.upsert({
+      where: { id: SETTINGS_ID },
+      update: {
+        cachedAccessToken: accessToken,
+        cachedUserId: userId || null,
+        tokenRefreshedAt: new Date(),
+      },
+      create: {
+        id: SETTINGS_ID,
+        cachedAccessToken: accessToken,
+        cachedUserId: userId || null,
+        tokenRefreshedAt: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error("[apply-code-login] Failed to save token to settings:", error);
+  }
+}
+
+export async function performApplyCodeLogin(): Promise<{ accessToken: string; userId: string } | null> {
+  const credentials = await getLoginCredentials();
+
+  if (!credentials) {
+    console.log("[apply-code-login] Missing credentials (configure in Settings or set LOGIN_BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD env vars)");
     return null;
   }
+
+  const { baseUrl, email, password } = credentials;
 
   try {
     // Step 1: Apply code
@@ -58,14 +112,18 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
 
     const loginData = await loginRes.json();
     const accessToken = loginData?.data?.accessToken;
-    const userId = loginData?.data?.userId;
+    const userId = loginData?.data?.userId ?? "";
     if (!accessToken) {
       console.log("[apply-code-login] No accessToken in login response:", JSON.stringify(loginData));
       return null;
     }
 
     console.log("[apply-code-login] Step 3 complete, got accessToken" + (userId ? " and userId" : ""));
-    return { accessToken, userId: userId ?? "" };
+
+    // Save token to settings for display in UI
+    await saveTokenToSettings(accessToken, userId);
+
+    return { accessToken, userId };
   } catch (error) {
     console.error("[apply-code-login] Error:", error);
     return null;

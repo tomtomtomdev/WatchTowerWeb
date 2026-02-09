@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { Settings } from "lucide-react";
 import { cn, statusBgColor } from "@/lib/utils";
 import type { EndpointWithStatus } from "@/lib/types";
 
@@ -54,6 +55,18 @@ export function Sidebar({ endpoints, className }: SidebarProps) {
           </p>
         )}
       </nav>
+      <div className="mt-auto border-t p-3">
+        <button
+          onClick={() => router.push("/settings")}
+          className={cn(
+            "w-full text-left flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+            pathname === "/settings" ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
+          )}
+        >
+          <Settings className="h-4 w-4" />
+          Settings
+        </button>
+      </div>
     </aside>
   );
 }
