@@ -98,6 +98,7 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
       registerType: "1",
       password: encryptedPassword,
     });
+    console.log("[apply-code-login] Login request body:", loginBody.toString());
 
     const loginRes = await fetch(`${baseUrl}/auth/login/login`, {
       method: "POST",
