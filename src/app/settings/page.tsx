@@ -35,7 +35,8 @@ export default function SettingsPage() {
     if (!settings) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/settings", {
+      // Step 1: Save settings
+      const saveRes = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -44,12 +45,39 @@ export default function SettingsPage() {
           loginPassword: settings.loginPassword,
         }),
       });
-      if (res.ok) {
-        const updated = await res.json();
-        setSettings(updated);
-        toast({ title: "Settings saved" });
-      } else {
+      if (!saveRes.ok) {
         toast({ title: "Failed to save settings", variant: "destructive" });
+        return;
+      }
+
+      toast({ title: "Settings saved, testing login..." });
+
+      // Step 2: Trigger login flow
+      const loginRes = await fetch("/api/settings/test-login", { method: "POST" });
+      const loginData = await loginRes.json();
+
+      if (loginRes.ok && loginData.success) {
+        // Update displayed credentials
+        setSettings({
+          ...settings,
+          hasPassword: true,
+          loginPassword: "••••••••",
+          cachedAccessToken: loginData.accessToken,
+          cachedUserId: loginData.userId,
+          tokenRefreshedAt: new Date().toISOString(),
+        });
+        toast({ title: "Login successful" });
+      } else {
+        // Refresh settings to show current state
+        const refreshRes = await fetch("/api/settings");
+        if (refreshRes.ok) {
+          setSettings(await refreshRes.json());
+        }
+        toast({
+          title: "Login failed",
+          description: loginData.error || "Check credentials and RSA_PUBLIC_KEY",
+          variant: "destructive"
+        });
       }
     } finally {
       setSaving(false);
@@ -117,7 +145,7 @@ export default function SettingsPage() {
             />
           </div>
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Save Settings"}
+            {saving ? "Saving & Testing..." : "Save & Test Login"}
           </Button>
         </CardContent>
       </Card>
