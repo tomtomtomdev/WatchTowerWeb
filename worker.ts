@@ -85,8 +85,11 @@ async function performHealthCheckWithRefresh(endpoint: {
     headersObj["Authorization"] = `Bearer ${endpoint.cachedToken}`;
   }
 
-  // Substitute {{userId}} in body
+  // Substitute {{accessToken}} and {{userId}} in body
   let body = endpoint.body;
+  if (body && endpoint.cachedToken) {
+    body = body.replace(/\{\{accessToken\}\}/g, endpoint.cachedToken);
+  }
   if (body && endpoint.cachedUserId) {
     body = body.replace(/\{\{userId\}\}/g, endpoint.cachedUserId);
   }
@@ -152,6 +155,9 @@ async function performHealthCheckWithRefresh(endpoint: {
 
   headersObj["Authorization"] = `Bearer ${newToken}`;
   let retryBody = endpoint.body;
+  if (retryBody && newToken) {
+    retryBody = retryBody.replace(/\{\{accessToken\}\}/g, newToken);
+  }
   const resolvedUserId = newUserId || endpoint.cachedUserId;
   if (retryBody && resolvedUserId) {
     retryBody = retryBody.replace(/\{\{userId\}\}/g, resolvedUserId);

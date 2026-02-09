@@ -19,6 +19,7 @@ export async function performHealthCheckWithRefresh(endpoint: {
   loginEndpointId: string | null;
   tokenJsonPath: string | null;
   cachedToken: string | null;
+  cachedUserId: string | null;
   tokenRefreshedAt: Date | null;
 }): Promise<TokenRefreshOutcome> {
   // Merge cached token into headers
@@ -26,7 +27,17 @@ export async function performHealthCheckWithRefresh(endpoint: {
   if (endpoint.cachedToken && !headersObj["Authorization"]) {
     headersObj["Authorization"] = `Bearer ${endpoint.cachedToken}`;
   }
-  const endpointWithToken = { ...endpoint, headers: JSON.stringify(headersObj) };
+
+  // Substitute {{accessToken}} and {{userId}} in body
+  let body = endpoint.body;
+  if (body && endpoint.cachedToken) {
+    body = body.replace(/\{\{accessToken\}\}/g, endpoint.cachedToken);
+  }
+  if (body && endpoint.cachedUserId) {
+    body = body.replace(/\{\{userId\}\}/g, endpoint.cachedUserId);
+  }
+
+  const endpointWithToken = { ...endpoint, headers: JSON.stringify(headersObj), body };
 
   const outcome = await performHealthCheck(endpointWithToken);
   const isTokenExpired = detectTokenExpiration(outcome.responseBody, outcome.statusCode);
@@ -69,7 +80,14 @@ export async function performHealthCheckWithRefresh(endpoint: {
 
   // Retry original request with new token
   headersObj["Authorization"] = `Bearer ${newToken}`;
-  const retryEndpoint = { ...endpoint, headers: JSON.stringify(headersObj) };
+  let retryBody = endpoint.body;
+  if (retryBody && newToken) {
+    retryBody = retryBody.replace(/\{\{accessToken\}\}/g, newToken);
+  }
+  if (retryBody && endpoint.cachedUserId) {
+    retryBody = retryBody.replace(/\{\{userId\}\}/g, endpoint.cachedUserId);
+  }
+  const retryEndpoint = { ...endpoint, headers: JSON.stringify(headersObj), body: retryBody };
   const retryOutcome = await performHealthCheck(retryEndpoint);
 
   return { ...retryOutcome, isTokenExpired: false, wasTokenRefreshed: true };

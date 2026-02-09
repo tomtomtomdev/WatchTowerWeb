@@ -42,7 +42,7 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
     const loginBody = new URLSearchParams({
       registerAccount: email,
       registerType: "1",
-      registerPassword: encryptedPassword,
+      password: encryptedPassword,
     });
 
     const loginRes = await fetch(`${baseUrl}/auth/login/login`, {
