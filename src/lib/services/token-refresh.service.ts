@@ -78,6 +78,8 @@ export async function performHealthCheckWithRefresh(endpoint: {
     data: { cachedToken: newToken, tokenRefreshedAt: new Date() },
   });
 
+  console.log(`[token-refresh] Saved accessToken: ${newToken.slice(0, 20)}...`);
+
   // Retry original request with new token
   headersObj["Authorization"] = `Bearer ${newToken}`;
   let retryBody = endpoint.body;

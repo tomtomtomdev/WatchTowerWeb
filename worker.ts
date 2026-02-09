@@ -153,6 +153,11 @@ async function performHealthCheckWithRefresh(endpoint: {
     data: { cachedToken: newToken, ...(newUserId ? { cachedUserId: newUserId } : {}), tokenRefreshedAt: new Date() },
   });
 
+  console.log(`[worker] Saved accessToken: ${newToken.slice(0, 20)}...`);
+  if (newUserId) {
+    console.log(`[worker] Saved userId: ${newUserId}`);
+  }
+
   headersObj["Authorization"] = `Bearer ${newToken}`;
   let retryBody = endpoint.body;
   if (retryBody && newToken) {
