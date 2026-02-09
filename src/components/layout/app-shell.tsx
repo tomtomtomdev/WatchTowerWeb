@@ -20,7 +20,7 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="flex h-screen flex-col">
-      <Header endpoints={endpoints} onAddEndpoint={() => setAddDialogOpen(true)} />
+      <Header endpoints={endpoints} onAddEndpoint={() => setAddDialogOpen(true)} onDeleteAll={refetch} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar endpoints={endpoints} className="hidden md:block" />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">

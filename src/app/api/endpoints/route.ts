@@ -107,3 +107,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+// DELETE /api/endpoints - Delete all endpoints
+export async function DELETE() {
+  try {
+    // Delete all health check results first (due to foreign key constraint)
+    await prisma.healthCheckResult.deleteMany({});
+    // Delete all endpoints
+    const result = await prisma.aPIEndpoint.deleteMany({});
+    return NextResponse.json({ success: true, deletedCount: result.count });
+  } catch (error) {
+    console.error("DELETE /api/endpoints error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
