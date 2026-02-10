@@ -72,8 +72,9 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
 
   try {
     // Step 1: Apply code
-    console.log("[apply-code-login] Step 1: Calling apply-code...");
-    const applyRes = await fetch(`${baseUrl}/stocks-ui/auth/common/apply-code`, {
+    const applyCodeUrl = `${baseUrl}/stocks-ui/auth/common/apply-code`;
+    console.log(`[apply-code-login] Step 1: GET ${applyCodeUrl}`);
+    const applyRes = await fetch(applyCodeUrl, {
       method: "GET",
     });
 
@@ -96,7 +97,8 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
     console.log("[apply-code-login] Step 2 complete");
 
     // Step 3: Login
-    console.log("[apply-code-login] Step 3: Calling login...");
+    const loginUrl = `${baseUrl}/auth/login/login`;
+    console.log(`[apply-code-login] Step 3: POST ${loginUrl}`);
     const loginBody = {
       registerAccount: email,
       registerType: 1,
@@ -104,7 +106,7 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
     };
     console.log("[apply-code-login] Login request body:", JSON.stringify(loginBody));
 
-    const loginRes = await fetch(`${baseUrl}/auth/login/login`, {
+    const loginRes = await fetch(loginUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(loginBody),

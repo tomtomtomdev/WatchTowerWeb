@@ -34,6 +34,7 @@ export async function performHealthCheck(endpoint: {
       init.body = endpoint.body;
     }
 
+    console.log(`[health-check] ${endpoint.method} ${endpoint.url}`);
     const response = await fetch(endpoint.url, init);
     clearTimeout(timeoutId);
 
