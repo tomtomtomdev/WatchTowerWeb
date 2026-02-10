@@ -67,10 +67,8 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
   try {
     // Step 1: Apply code
     console.log("[apply-code-login] Step 1: Calling apply-code...");
-    const applyRes = await fetch(`${baseUrl}/auth/common/apply-code`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: "",
+    const applyRes = await fetch(`${baseUrl}/stocks-ui/auth/common/apply-code`, {
+      method: "GET",
     });
 
     if (!applyRes.ok) {
