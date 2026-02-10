@@ -13,10 +13,21 @@ export async function POST() {
       );
     }
 
+    if (!result.accessToken) {
+      return NextResponse.json(
+        {
+          error: "Login failed. Check your credentials.",
+          debug: result.debug,
+        },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       accessToken: result.accessToken,
       userId: result.userId,
+      debug: result.debug,
     });
   } catch (error) {
     console.error("POST /api/settings/test-login error:", error);

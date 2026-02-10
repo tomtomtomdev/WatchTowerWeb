@@ -54,7 +54,13 @@ async function saveTokenToSettings(accessToken: string, userId: string): Promise
   }
 }
 
-export async function performApplyCodeLogin(): Promise<{ accessToken: string; userId: string } | null> {
+export interface LoginDebugInfo {
+  requestBody: Record<string, unknown>;
+  responseBody: Record<string, unknown>;
+  responseStatus: number;
+}
+
+export async function performApplyCodeLogin(): Promise<{ accessToken: string; userId: string; debug: LoginDebugInfo } | null> {
   const credentials = await getLoginCredentials();
 
   if (!credentials) {
@@ -104,17 +110,23 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
       body: JSON.stringify(loginBody),
     });
 
+    const loginData = await loginRes.json();
+    const debug: LoginDebugInfo = {
+      requestBody: loginBody,
+      responseBody: loginData,
+      responseStatus: loginRes.status,
+    };
+
     if (!loginRes.ok) {
       console.log(`[apply-code-login] login failed: HTTP ${loginRes.status}`);
-      return null;
+      return { accessToken: "", userId: "", debug };
     }
 
-    const loginData = await loginRes.json();
     const accessToken = loginData?.data?.accessToken;
     const userId = loginData?.data?.userId ?? "";
     if (!accessToken) {
       console.log("[apply-code-login] No accessToken in login response:", JSON.stringify(loginData));
-      return null;
+      return { accessToken: "", userId: "", debug };
     }
 
     console.log("[apply-code-login] Step 3 complete, got accessToken" + (userId ? " and userId" : ""));
@@ -122,7 +134,7 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
     // Save token to settings for display in UI
     await saveTokenToSettings(accessToken, userId);
 
-    return { accessToken, userId };
+    return { accessToken, userId, debug };
   } catch (error) {
     console.error("[apply-code-login] Error:", error);
     return null;

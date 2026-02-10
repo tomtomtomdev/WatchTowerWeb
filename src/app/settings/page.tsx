@@ -21,6 +21,7 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<{ requestBody: Record<string, unknown>; responseBody: Record<string, unknown>; responseStatus: number } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -55,6 +56,10 @@ export default function SettingsPage() {
       // Step 2: Trigger login flow
       const loginRes = await fetch("/api/settings/test-login", { method: "POST" });
       const loginData = await loginRes.json();
+
+      if (loginData.debug) {
+        setDebugInfo(loginData.debug);
+      }
 
       if (loginRes.ok && loginData.success) {
         // Update displayed credentials
@@ -180,6 +185,30 @@ export default function SettingsPage() {
           )}
         </CardContent>
       </Card>
+      {debugInfo && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Login Request / Response</CardTitle>
+            <CardDescription>
+              Debug info from the last login attempt (HTTP {debugInfo.responseStatus})
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Request Body</Label>
+              <pre className="p-3 bg-muted rounded-md font-mono text-xs overflow-auto max-h-60">
+                {JSON.stringify(debugInfo.requestBody, null, 2)}
+              </pre>
+            </div>
+            <div className="space-y-2">
+              <Label>Response Body</Label>
+              <pre className="p-3 bg-muted rounded-md font-mono text-xs overflow-auto max-h-60">
+                {JSON.stringify(debugInfo.responseBody, null, 2)}
+              </pre>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
