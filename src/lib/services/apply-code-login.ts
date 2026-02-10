@@ -91,17 +91,17 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
 
     // Step 3: Login
     console.log("[apply-code-login] Step 3: Calling login...");
-    const loginBody = new URLSearchParams({
+    const loginBody = {
       registerAccount: email,
-      registerType: "1",
+      registerType: 1,
       password: encryptedPassword,
-    });
-    console.log("[apply-code-login] Login request body:", loginBody.toString());
+    };
+    console.log("[apply-code-login] Login request body:", JSON.stringify(loginBody));
 
     const loginRes = await fetch(`${baseUrl}/auth/login/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: loginBody.toString(),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(loginBody),
     });
 
     if (!loginRes.ok) {
