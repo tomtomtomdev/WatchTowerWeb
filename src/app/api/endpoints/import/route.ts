@@ -3,6 +3,19 @@ import { prisma } from "@/lib/db";
 import { parseCurlCommand } from "@/lib/services/curl-parser.service";
 import { parsePostmanCollection } from "@/lib/services/postman-parser.service";
 
+function shouldDisableByDefault(url: string): boolean {
+  return url.includes("/apply-code") || url.includes("/login/login");
+}
+
+async function upsertEndpoint(data: { name: string; url: string; method: string; headers: string; body: string | null }) {
+  const isEnabled = !shouldDisableByDefault(data.url);
+  const existing = await prisma.aPIEndpoint.findFirst({ where: { url: data.url } });
+  if (existing) {
+    return prisma.aPIEndpoint.update({ where: { id: existing.id }, data: { ...data, isEnabled } });
+  }
+  return prisma.aPIEndpoint.create({ data: { ...data, isEnabled } });
+}
+
 // POST /api/endpoints/import - Import from cURL or Postman
 export async function POST(request: Request) {
   try {
@@ -16,14 +29,12 @@ export async function POST(request: Request) {
     if (type === "curl") {
       try {
         const parsed = parseCurlCommand(data);
-        const endpoint = await prisma.aPIEndpoint.create({
-          data: {
-            name: parsed.name,
-            url: parsed.url,
-            method: parsed.method,
-            headers: JSON.stringify(parsed.headers),
-            body: parsed.body,
-          },
+        const endpoint = await upsertEndpoint({
+          name: parsed.name,
+          url: parsed.url,
+          method: parsed.method,
+          headers: JSON.stringify(parsed.headers),
+          body: parsed.body,
         });
         return NextResponse.json({ imported: 1, endpoints: [endpoint] }, { status: 201 });
       } catch (err) {
@@ -41,14 +52,12 @@ export async function POST(request: Request) {
 
         const endpoints = [];
         for (const req of parsed) {
-          const endpoint = await prisma.aPIEndpoint.create({
-            data: {
-              name: req.name,
-              url: req.url,
-              method: req.method,
-              headers: JSON.stringify(req.headers),
-              body: req.body,
-            },
+          const endpoint = await upsertEndpoint({
+            name: req.name,
+            url: req.url,
+            method: req.method,
+            headers: JSON.stringify(req.headers),
+            body: req.body,
           });
           endpoints.push(endpoint);
         }

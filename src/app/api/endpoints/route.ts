@@ -75,14 +75,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "tokenJsonPath starting with '$.' is required when loginEndpointId is set" }, { status: 400 });
     }
 
+    const trimmedUrl = url.trim();
+    const autoDisable = trimmedUrl.includes("/apply-code") || trimmedUrl.includes("/login/login");
+
     const endpoint = await prisma.aPIEndpoint.create({
       data: {
         name: name.trim(),
-        url: url.trim(),
+        url: trimmedUrl,
         method: method || "GET",
         headers: headers ? JSON.stringify(headers) : "{}",
         body: reqBody || null,
         pollingInterval: pollingInterval || 900,
+        isEnabled: autoDisable ? false : undefined,
         loginEndpointId: loginEndpointId || null,
         tokenJsonPath: tokenJsonPath || null,
         useApplyCodeLogin: useApplyCodeLogin ?? false,
