@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { performHealthCheck } from "./health-check.service";
+import { performHealthCheckWithRefresh } from "./token-refresh.service";
 
 export async function getDueEndpoints() {
   const endpoints = await prisma.aPIEndpoint.findMany({
@@ -20,15 +20,17 @@ export async function runScheduledChecks() {
 
   const results = [];
   for (const endpoint of dueEndpoints) {
-    const outcome = await performHealthCheck(endpoint);
+    const outcome = await performHealthCheckWithRefresh(endpoint);
 
     await prisma.healthCheckResult.create({
       data: {
         endpointId: endpoint.id,
         isSuccess: outcome.isSuccess,
+        isTokenExpired: outcome.isTokenExpired,
         statusCode: outcome.statusCode,
         responseTime: outcome.responseTime,
         errorMessage: outcome.errorMessage,
+        responseBody: outcome.responseBody,
       },
     });
 
