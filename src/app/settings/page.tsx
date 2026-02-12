@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 
 interface Settings {
@@ -17,6 +18,7 @@ interface Settings {
   cachedAccessToken: string | null;
   cachedUserId: string | null;
   tokenRefreshedAt: string | null;
+  tokenRefreshInterval: number;
 }
 
 export default function SettingsPage() {
@@ -48,6 +50,7 @@ export default function SettingsPage() {
           loginPhone: settings.loginPhone,
           loginType: settings.loginType,
           loginPassword: settings.loginPassword,
+          tokenRefreshInterval: settings.tokenRefreshInterval,
         }),
       });
       if (!saveRes.ok) {
@@ -186,6 +189,29 @@ export default function SettingsPage() {
               value={settings.loginPassword}
               onChange={(e) => setSettings({ ...settings, loginPassword: e.target.value })}
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Token Refresh Interval</Label>
+            <Select
+              value={String(settings.tokenRefreshInterval)}
+              onValueChange={(v) => setSettings({ ...settings, tokenRefreshInterval: Number(v) })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30">30 seconds</SelectItem>
+                <SelectItem value="60">1 minute</SelectItem>
+                <SelectItem value="300">5 minutes</SelectItem>
+                <SelectItem value="600">10 minutes</SelectItem>
+                <SelectItem value="900">15 minutes</SelectItem>
+                <SelectItem value="1800">30 minutes</SelectItem>
+                <SelectItem value="3600">1 hour</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Minimum time between automatic token refreshes
+            </p>
           </div>
           <Button onClick={handleSave} disabled={saving}>
             {saving ? "Saving & Testing..." : "Save & Test Login"}

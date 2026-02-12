@@ -4,7 +4,7 @@ import { detectTokenExpiration } from "@/lib/utils/token-detection";
 import { extractTokenFromResponse } from "@/lib/utils/jsonpath";
 import { performApplyCodeLogin } from "./apply-code-login";
 
-const REFRESH_COOLDOWN_MS = 60_000;
+const DEFAULT_REFRESH_COOLDOWN_S = 60;
 
 export interface TokenRefreshOutcome extends HealthCheckOutcome {
   isTokenExpired: boolean;
@@ -16,15 +16,16 @@ export interface TokenRefreshOutcome extends HealthCheckOutcome {
  * Per-endpoint cachedToken takes priority; Settings values are used when
  * the endpoint has no token of its own.
  */
-async function getGlobalToken(): Promise<{ accessToken: string | null; userId: string | null }> {
+async function getGlobalSettings(): Promise<{ accessToken: string | null; userId: string | null; refreshCooldownMs: number }> {
   try {
     const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
     return {
       accessToken: settings?.cachedAccessToken ?? null,
       userId: settings?.cachedUserId ?? null,
+      refreshCooldownMs: (settings?.tokenRefreshInterval ?? DEFAULT_REFRESH_COOLDOWN_S) * 1000,
     };
   } catch {
-    return { accessToken: null, userId: null };
+    return { accessToken: null, userId: null, refreshCooldownMs: DEFAULT_REFRESH_COOLDOWN_S * 1000 };
   }
 }
 
@@ -93,7 +94,7 @@ export async function performHealthCheckWithRefresh(endpoint: {
   useApplyCodeLogin: boolean;
 }): Promise<TokenRefreshOutcome> {
   // Resolve token: per-endpoint first, then global Settings
-  const global = await getGlobalToken();
+  const global = await getGlobalSettings();
   const resolvedToken = endpoint.cachedToken || global.accessToken;
   const resolvedUserId = endpoint.cachedUserId || global.userId;
 
@@ -126,7 +127,7 @@ export async function performHealthCheckWithRefresh(endpoint: {
   // Cooldown check
   if (endpoint.tokenRefreshedAt) {
     const elapsed = Date.now() - endpoint.tokenRefreshedAt.getTime();
-    if (elapsed < REFRESH_COOLDOWN_MS) {
+    if (elapsed < global.refreshCooldownMs) {
       return { ...outcome, isTokenExpired, wasTokenRefreshed: false };
     }
   }

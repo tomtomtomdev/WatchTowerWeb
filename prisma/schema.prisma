@@ -58,10 +58,11 @@ model Settings {
   loginPhone      String?
   loginType       String?  @default("email")
   loginPassword   String?
-  cachedAccessToken String?
-  cachedUserId      String?
-  tokenRefreshedAt  DateTime?
-  updatedAt       DateTime @updatedAt
+  cachedAccessToken    String?
+  cachedUserId         String?
+  tokenRefreshedAt     DateTime?
+  tokenRefreshInterval Int      @default(60)
+  updatedAt            DateTime @updatedAt
 
   @@map("settings")
 }

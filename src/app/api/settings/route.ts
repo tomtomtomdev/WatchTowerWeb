@@ -26,6 +26,7 @@ export async function GET() {
       cachedAccessToken: settings.cachedAccessToken || null,
       cachedUserId: settings.cachedUserId || null,
       tokenRefreshedAt: settings.tokenRefreshedAt?.toISOString() || null,
+      tokenRefreshInterval: settings.tokenRefreshInterval ?? 60,
     });
   } catch (error) {
     console.error("GET /api/settings error:", error);
@@ -54,6 +55,9 @@ export async function PUT(request: Request) {
     if (body.loginPassword !== undefined && body.loginPassword !== "••••••••") {
       updates.loginPassword = body.loginPassword || null;
     }
+    if (body.tokenRefreshInterval !== undefined) {
+      updates.tokenRefreshInterval = Math.max(10, Number(body.tokenRefreshInterval) || 60);
+    }
 
     const settings = await prisma.settings.upsert({
       where: { id: SETTINGS_ID },
@@ -71,6 +75,7 @@ export async function PUT(request: Request) {
       cachedAccessToken: settings.cachedAccessToken || null,
       cachedUserId: settings.cachedUserId || null,
       tokenRefreshedAt: settings.tokenRefreshedAt?.toISOString() || null,
+      tokenRefreshInterval: settings.tokenRefreshInterval ?? 60,
     });
   } catch (error) {
     console.error("PUT /api/settings error:", error);
