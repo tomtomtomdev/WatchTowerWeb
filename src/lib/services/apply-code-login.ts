@@ -118,7 +118,7 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
 
     // Step 2: Encrypt password
     console.log("[apply-code-login] Step 2: Encrypting password...");
-    const encryptedPassword = encryptPassword(password, code);
+    const encryptedPassword = encodeURIComponent(encryptPassword(password, code));
     console.log("[apply-code-login] Step 2 complete");
 
     // Step 3: Login
