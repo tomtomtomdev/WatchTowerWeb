@@ -55,6 +55,8 @@ model Settings {
   id              String   @id @default("singleton")
   loginBaseUrl    String?
   loginEmail      String?
+  loginPhone      String?
+  loginType       String?  @default("email")
   loginPassword   String?
   cachedAccessToken String?
   cachedUserId      String?

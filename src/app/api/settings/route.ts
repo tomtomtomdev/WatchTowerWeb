@@ -19,6 +19,8 @@ export async function GET() {
     return NextResponse.json({
       loginBaseUrl: settings.loginBaseUrl || "",
       loginEmail: settings.loginEmail || "",
+      loginPhone: settings.loginPhone || "",
+      loginType: settings.loginType || "email",
       loginPassword: settings.loginPassword ? "••••••••" : "",
       hasPassword: !!settings.loginPassword,
       cachedAccessToken: settings.cachedAccessToken || null,
@@ -43,6 +45,12 @@ export async function PUT(request: Request) {
     if (body.loginEmail !== undefined) {
       updates.loginEmail = body.loginEmail || null;
     }
+    if (body.loginPhone !== undefined) {
+      updates.loginPhone = body.loginPhone || null;
+    }
+    if (body.loginType !== undefined) {
+      updates.loginType = body.loginType || "email";
+    }
     if (body.loginPassword !== undefined && body.loginPassword !== "••••••••") {
       updates.loginPassword = body.loginPassword || null;
     }
@@ -56,6 +64,8 @@ export async function PUT(request: Request) {
     return NextResponse.json({
       loginBaseUrl: settings.loginBaseUrl || "",
       loginEmail: settings.loginEmail || "",
+      loginPhone: settings.loginPhone || "",
+      loginType: settings.loginType || "email",
       loginPassword: settings.loginPassword ? "••••••••" : "",
       hasPassword: !!settings.loginPassword,
       cachedAccessToken: settings.cachedAccessToken || null,

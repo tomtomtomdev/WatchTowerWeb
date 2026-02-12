@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 interface Settings {
   loginBaseUrl: string;
   loginEmail: string;
+  loginPhone: string;
+  loginType: "email" | "phone";
   loginPassword: string;
   hasPassword: boolean;
   cachedAccessToken: string | null;
@@ -43,6 +45,8 @@ export default function SettingsPage() {
         body: JSON.stringify({
           loginBaseUrl: settings.loginBaseUrl,
           loginEmail: settings.loginEmail,
+          loginPhone: settings.loginPhone,
+          loginType: settings.loginType,
           loginPassword: settings.loginPassword,
         }),
       });
@@ -130,15 +134,49 @@ export default function SettingsPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="loginEmail">Email</Label>
-            <Input
-              id="loginEmail"
-              type="email"
-              placeholder="your-email@example.com"
-              value={settings.loginEmail}
-              onChange={(e) => setSettings({ ...settings, loginEmail: e.target.value })}
-            />
+            <Label>Login Method</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={settings.loginType === "email" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSettings({ ...settings, loginType: "email" })}
+              >
+                Email
+              </Button>
+              <Button
+                type="button"
+                variant={settings.loginType === "phone" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSettings({ ...settings, loginType: "phone" })}
+              >
+                Phone
+              </Button>
+            </div>
           </div>
+          {settings.loginType === "email" ? (
+            <div className="space-y-2">
+              <Label htmlFor="loginEmail">Email</Label>
+              <Input
+                id="loginEmail"
+                type="email"
+                placeholder="your-email@example.com"
+                value={settings.loginEmail}
+                onChange={(e) => setSettings({ ...settings, loginEmail: e.target.value })}
+              />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="loginPhone">Phone Number</Label>
+              <Input
+                id="loginPhone"
+                type="tel"
+                placeholder="6281234567890"
+                value={settings.loginPhone}
+                onChange={(e) => setSettings({ ...settings, loginPhone: e.target.value })}
+              />
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="loginPassword">Password</Label>
             <Input
