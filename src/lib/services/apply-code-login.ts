@@ -118,7 +118,9 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
 
     // Step 2: Encrypt password
     console.log("[apply-code-login] Step 2: Encrypting password...");
-    const encryptedPassword = encodeURIComponent(encryptPassword(password, code));
+    const encryptedPassword = encryptPassword(password, code);
+    // Percent-encode like iOS: encode everything except /
+    const encodedPassword = encodeURIComponent(encryptedPassword).replace(/%2F/g, "/");
     console.log("[apply-code-login] Step 2 complete");
 
     // Step 3: Login
@@ -134,7 +136,7 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
       h: "956.0",
       isRelease: "0",
       language: "en",
-      password: encryptedPassword,
+      password: encodedPassword,
       platform: "iOS",
       registerAccount: email,
       registerType: "0",
@@ -144,12 +146,13 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
       userId: "",
       w: "440.0",
     };
-    console.log("[apply-code-login] Login request body:", JSON.stringify(loginBody));
+    const loginFormBody = new URLSearchParams(loginBody).toString();
+    console.log("[apply-code-login] Login request body:", loginFormBody);
 
     const loginRes = await fetch(loginUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(loginBody),
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: loginFormBody,
     });
 
     const loginData = await loginRes.json();
