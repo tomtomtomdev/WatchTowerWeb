@@ -3,19 +3,31 @@ import { prisma } from "@/lib/db";
 
 const SETTINGS_ID = "singleton";
 
-async function getLoginCredentials(): Promise<{ baseUrl: string; email: string; password: string } | null> {
+interface LoginCredentials {
+  baseUrl: string;
+  account: string;
+  password: string;
+  loginType: "email" | "phone";
+}
+
+async function getLoginCredentials(): Promise<LoginCredentials | null> {
   // Try to get credentials from database first
   try {
     const settings = await prisma.settings.findUnique({
       where: { id: SETTINGS_ID },
     });
 
-    if (settings?.loginBaseUrl && settings?.loginEmail && settings?.loginPassword) {
-      return {
-        baseUrl: settings.loginBaseUrl,
-        email: settings.loginEmail,
-        password: settings.loginPassword,
-      };
+    if (settings?.loginBaseUrl && settings?.loginPassword) {
+      const loginType = (settings.loginType as "email" | "phone") || "email";
+      const account = loginType === "phone" ? settings.loginPhone : settings.loginEmail;
+      if (account) {
+        return {
+          baseUrl: settings.loginBaseUrl,
+          account,
+          password: settings.loginPassword,
+          loginType,
+        };
+      }
     }
   } catch (error) {
     console.log("[apply-code-login] Could not read from database, falling back to env vars");
@@ -27,7 +39,7 @@ async function getLoginCredentials(): Promise<{ baseUrl: string; email: string; 
   const password = process.env.LOGIN_PASSWORD;
 
   if (baseUrl && email && password) {
-    return { baseUrl, email, password };
+    return { baseUrl, account: email, password, loginType: "email" };
   }
 
   return null;
@@ -68,11 +80,12 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
     return null;
   }
 
-  const { baseUrl, email, password } = credentials;
+  const { baseUrl, account, password, loginType } = credentials;
 
   try {
     // Step 1: Apply code
-    const applyCodeParams = new URLSearchParams({
+    const applyCodeUrl = `${baseUrl}/auth/common/apply-code`;
+    const applyCodeFormBody = new URLSearchParams({
       accessToken: "",
       cVersion: "1.9.0",
       channel: "jenkins",
@@ -88,15 +101,22 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
       token: "",
       userId: "",
       w: "440.0",
-    });
-    const applyCodeUrl = `${baseUrl}/auth/common/apply-code`;
-    const applyCodeBody = Object.fromEntries(applyCodeParams.entries());
+    }).toString();
     console.log(`[apply-code-login] Step 1: POST ${applyCodeUrl}`);
-    console.log("[apply-code-login] Apply-code request body:", JSON.stringify(applyCodeBody));
+    console.log("[apply-code-login] Apply-code request body:", applyCodeFormBody);
+    const requestId = crypto.randomUUID().toUpperCase();
+    const timestamp = new Date().toISOString().replace("T", " ").replace(/\.\d+Z$/, "Z");
     const applyRes = await fetch(applyCodeUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(applyCodeBody),
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
+        "Accept": "application/json",
+        "User-Agent": "TTCore/1.9.0 (iPhone 17 Pro Max; iOS 26.1)",
+        "x-request-id": requestId,
+        "x-timestamp": timestamp,
+        "x-user-id": "",
+      },
+      body: applyCodeFormBody,
     });
 
     if (!applyRes.ok) {
@@ -138,20 +158,33 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
       language: "en",
       password: encodedPassword,
       platform: "iOS",
-      registerAccount: email,
-      registerType: "0",
+      registerAccount: account,
+      registerType: loginType === "phone" ? "0" : "1",
       sVersion: "26.1",
       statusHeight: "54.0",
       token: "",
       userId: "",
       w: "440.0",
     };
-    const loginFormBody = new URLSearchParams(loginBody).toString();
+    // Build form body manually so that '/' in password stays literal (not %2F).
+    // URLSearchParams would re-encode '/' to '%2F'.
+    const loginFormBody = Object.entries(loginBody)
+      .map(([k, v]) => k === "password"
+        ? `${k}=${encodedPassword}`
+        : `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+      .join("&");
     console.log("[apply-code-login] Login request body:", loginFormBody);
 
     const loginRes = await fetch(loginUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
+        "Accept": "application/json",
+        "User-Agent": "TTCore/1.9.0 (iPhone 17 Pro Max; iOS 26.1)",
+        "x-request-id": requestId,
+        "x-timestamp": timestamp,
+        "x-user-id": "",
+      },
       body: loginFormBody,
     });
 
