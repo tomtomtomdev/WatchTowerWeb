@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { Play, Trash2, ToggleLeft, ToggleRight, Loader2 } from "lucide-react";
+import { Play, Trash2, ToggleLeft, ToggleRight, Loader2, Download } from "lucide-react";
+import { generateCurl } from "@/lib/services/curl-generator.service";
 import type { EndpointWithStatus } from "@/lib/types";
 
 interface EndpointActionsProps {
@@ -66,6 +67,23 @@ export function EndpointActions({ endpoint, isChecking, onCheck, onRefetch }: En
         ) : (
           <><ToggleRight className="h-4 w-4 mr-1" /> Enable</>
         )}
+      </Button>
+      <Button
+        onClick={() => {
+          const curl = generateCurl(endpoint);
+          const blob = new Blob([`#!/bin/bash\n${curl}\n`], { type: "text/x-sh" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${endpoint.name.replace(/[^a-zA-Z0-9_-]/g, "_")}.sh`;
+          a.click();
+          URL.revokeObjectURL(url);
+          toast({ title: "Exported cURL", description: `Downloaded ${a.download}` });
+        }}
+        variant="outline"
+        size="sm"
+      >
+        <Download className="h-4 w-4 mr-1" /> Export cURL
       </Button>
       <Button onClick={handleDelete} variant="destructive" size="sm" disabled={loading}>
         <Trash2 className="h-4 w-4 mr-1" /> Delete

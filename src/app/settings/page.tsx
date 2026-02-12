@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +26,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [debugInfo, setDebugInfo] = useState<{ requestBody: Record<string, unknown>; responseBody: Record<string, unknown>; responseStatus: number } | null>(null);
+  const [showToken, setShowToken] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -228,9 +229,24 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Access Token</Label>
+            <div className="flex items-center justify-between">
+              <Label>Access Token</Label>
+              {settings.cachedAccessToken && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowToken(!showToken)}
+                >
+                  {showToken ? "Hide" : "Show"}
+                </Button>
+              )}
+            </div>
             <div className="p-3 bg-muted rounded-md font-mono text-sm break-all">
-              {settings.cachedAccessToken || <span className="text-muted-foreground">Not available</span>}
+              {settings.cachedAccessToken
+                ? showToken
+                  ? settings.cachedAccessToken
+                  : "••••••••••••••••"
+                : <span className="text-muted-foreground">Not available</span>}
             </div>
           </div>
           <div className="space-y-2">
