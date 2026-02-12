@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Radio, Bell, BellOff, Trash2, Settings } from "lucide-react";
+import { Radio, Bell, BellOff, Trash2, Settings, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNotifications } from "@/hooks/use-notifications";
@@ -28,6 +28,42 @@ export function Header({ endpoints, onAddEndpoint, onDeleteAll }: HeaderProps) {
   const { permission, requestPermission } = useNotifications();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [countdown, setCountdown] = useState<string | null>(null);
+
+  const enabledEndpoints = useMemo(
+    () => endpoints.filter((e) => e.isEnabled && e.lastCheckedAt),
+    [endpoints]
+  );
+
+  useEffect(() => {
+    if (enabledEndpoints.length === 0) {
+      setCountdown(null);
+      return;
+    }
+
+    function computeCountdown() {
+      const now = Date.now();
+      let nearest = Infinity;
+      for (const ep of enabledEndpoints) {
+        const due = new Date(ep.lastCheckedAt!).getTime() + ep.pollingInterval * 1000;
+        const remaining = due - now;
+        if (remaining < nearest) nearest = remaining;
+      }
+      if (nearest <= 0) return "Due now";
+      const totalSec = Math.ceil(nearest / 1000);
+      if (totalSec >= 60) {
+        const m = Math.floor(totalSec / 60);
+        const s = totalSec % 60;
+        return s > 0 ? `${m}m ${s}s` : `${m}m`;
+      }
+      return `${totalSec}s`;
+    }
+
+    setCountdown(computeCountdown());
+    const id = setInterval(() => setCountdown(computeCountdown()), 1000);
+    return () => clearInterval(id);
+  }, [enabledEndpoints]);
 
   const healthy = endpoints.filter((e) => e.status === "healthy").length;
   const failing = endpoints.filter((e) => e.status === "failing").length;
@@ -66,6 +102,12 @@ export function Header({ endpoints, onAddEndpoint, onDeleteAll }: HeaderProps) {
               )}
               {unknown > 0 && (
                 <Badge variant="secondary">{unknown} unknown</Badge>
+              )}
+              {countdown && (
+                <Badge variant="outline" className="gap-1 text-muted-foreground">
+                  <Timer className="h-3 w-3" />
+                  Next: {countdown}
+                </Badge>
               )}
             </div>
           )}

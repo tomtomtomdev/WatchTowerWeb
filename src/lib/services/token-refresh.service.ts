@@ -12,9 +12,9 @@ export interface TokenRefreshOutcome extends HealthCheckOutcome {
 }
 
 /**
- * Load the global accessToken/userId from Settings as fallback.
- * Per-endpoint cachedToken takes priority; Settings values are used when
- * the endpoint has no token of its own.
+ * Load the global accessToken/userId from Settings as primary source.
+ * Settings values take priority; per-endpoint cachedToken is used as
+ * fallback when Settings has no token.
  */
 async function getGlobalSettings(): Promise<{ accessToken: string | null; userId: string | null; refreshCooldownMs: number }> {
   try {
@@ -93,10 +93,10 @@ export async function performHealthCheckWithRefresh(endpoint: {
   tokenRefreshedAt: Date | null;
   useApplyCodeLogin: boolean;
 }): Promise<TokenRefreshOutcome> {
-  // Resolve token: per-endpoint first, then global Settings
+  // Resolve token: global Settings first, then per-endpoint fallback
   const global = await getGlobalSettings();
-  const resolvedToken = endpoint.cachedToken || global.accessToken;
-  const resolvedUserId = endpoint.cachedUserId || global.userId;
+  const resolvedToken = global.accessToken || endpoint.cachedToken;
+  const resolvedUserId = global.userId || endpoint.cachedUserId;
 
   // Merge token into Authorization header
   const headersObj: Record<string, string> = JSON.parse(endpoint.headers || "{}");
@@ -180,7 +180,7 @@ export async function performHealthCheckWithRefresh(endpoint: {
 
   // Retry original request with new token
   headersObj["Authorization"] = `Bearer ${newToken}`;
-  const retryUserId = newUserId || endpoint.cachedUserId || global.userId;
+  const retryUserId = newUserId || global.userId || endpoint.cachedUserId;
   const retryBody = injectTokenIntoBody(endpoint.body, newToken, retryUserId);
   const retryUrl = injectTokenIntoUrl(endpoint.url, newToken, retryUserId);
   const retryEndpoint = { ...endpoint, url: retryUrl, headers: JSON.stringify(headersObj), body: retryBody };
