@@ -10,12 +10,18 @@ A web-based API health monitoring dashboard. Track uptime, response times, and g
 ## Features
 
 - **Real-time monitoring** — Track multiple API endpoints with configurable polling intervals (5m, 15m, 1h, 12h, 24h)
-- **Live dashboard** — Status cards with color-coded health indicators (healthy/failing/unknown)
+- **Live dashboard** — Status cards with color-coded health indicators (healthy/failing/expired/unknown) and next-poll countdown timer
+- **Search & filter** — Filter endpoints by name or status directly from dashboard summary cards
 - **Response time charts** — Historical performance visualization with Recharts
+- **Response & request body viewer** — Inspect full request/response payloads on the endpoint detail page
 - **Browser notifications** — Get alerted when endpoints go down or recover
 - **cURL import** — Paste a cURL command to instantly create a monitored endpoint
 - **Postman import** — Upload a Postman collection to bulk-import endpoints
 - **Bulk actions** — Multi-select endpoints to check, enable, disable, or delete in batch
+- **Delete all** — One-click removal of all endpoints with confirmation
+- **Automatic token refresh** — RSA-encrypted apply-code login flow with configurable refresh interval
+- **Dynamic variable substitution** — Use `{{accessToken}}` and `{{userId}}` placeholders in endpoint URLs and bodies
+- **Settings page** — Configure login credentials, token refresh interval, and test the login flow
 - **Dark mode** — Automatic theme based on system preference
 
 ## Quick Start
@@ -114,6 +120,9 @@ worker.ts                         # Background health check process
 | `GET` | `/api/endpoints/:id/results` | Get paginated check history |
 | `POST` | `/api/endpoints/import` | Import from cURL or Postman |
 | `POST` | `/api/endpoints/bulk` | Bulk check/enable/disable/delete |
+| `GET` | `/api/settings` | Get global settings |
+| `PUT` | `/api/settings` | Update global settings |
+| `POST` | `/api/settings/login` | Test login and retrieve tokens |
 
 ## Tech Stack
 
