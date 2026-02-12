@@ -72,10 +72,31 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
 
   try {
     // Step 1: Apply code
-    const applyCodeUrl = `${baseUrl}/stocks-ui/auth/common/apply-code`;
-    console.log(`[apply-code-login] Step 1: GET ${applyCodeUrl}`);
+    const applyCodeParams = new URLSearchParams({
+      accessToken: "",
+      cVersion: "1.9.0",
+      channel: "jenkins",
+      dark: "1",
+      deviceId: "2E418112-A18D-437B-9101-F593EF07E015",
+      deviceType: "iPhone 17 Pro Max",
+      h: "956.0",
+      isRelease: "0",
+      language: "en",
+      platform: "iOS",
+      sVersion: "26.1",
+      statusHeight: "54.0",
+      token: "",
+      userId: "",
+      w: "440.0",
+    });
+    const applyCodeUrl = `${baseUrl}/auth/common/apply-code`;
+    const applyCodeBody = Object.fromEntries(applyCodeParams.entries());
+    console.log(`[apply-code-login] Step 1: POST ${applyCodeUrl}`);
+    console.log("[apply-code-login] Apply-code request body:", JSON.stringify(applyCodeBody));
     const applyRes = await fetch(applyCodeUrl, {
-      method: "GET",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(applyCodeBody),
     });
 
     if (!applyRes.ok) {
@@ -84,6 +105,10 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
     }
 
     const applyData = await applyRes.json();
+    if (applyData?.errorCode) {
+      console.log(`[apply-code-login] apply-code failed with errorCode: ${applyData.errorCode}`, JSON.stringify(applyData));
+      return null;
+    }
     const code = applyData?.data?.code;
     if (!code) {
       console.log("[apply-code-login] No code in apply-code response:", JSON.stringify(applyData));
@@ -118,6 +143,11 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
       responseBody: loginData,
       responseStatus: loginRes.status,
     };
+
+    if (loginData?.errorCode) {
+      console.log(`[apply-code-login] login failed with errorCode: ${loginData.errorCode}`, JSON.stringify(loginData));
+      return { accessToken: "", userId: "", debug };
+    }
 
     if (!loginRes.ok) {
       console.log(`[apply-code-login] login failed: HTTP ${loginRes.status}`);
