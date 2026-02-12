@@ -125,9 +125,24 @@ export async function performApplyCodeLogin(): Promise<{ accessToken: string; us
     const loginUrl = `${baseUrl}/auth/login/login`;
     console.log(`[apply-code-login] Step 3: POST ${loginUrl}`);
     const loginBody = {
-      registerAccount: email,
-      registerType: 1,
+      accessToken: "",
+      cVersion: "1.9.0",
+      channel: "jenkins",
+      dark: "1",
+      deviceId: "2E418112-A18D-437B-9101-F593EF07E015",
+      deviceType: "iPhone 17 Pro Max",
+      h: "956.0",
+      isRelease: "0",
+      language: "en",
       password: encryptedPassword,
+      platform: "iOS",
+      registerAccount: email,
+      registerType: "0",
+      sVersion: "26.1",
+      statusHeight: "54.0",
+      token: "",
+      userId: "",
+      w: "440.0",
     };
     console.log("[apply-code-login] Login request body:", JSON.stringify(loginBody));
 
